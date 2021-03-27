@@ -1,0 +1,16 @@
+8 9
+hello
+bye
+123
+456
+123
+hello
+yellow
+more money
+more
+less money
+good
+bye
+456
+bye
+8 9
