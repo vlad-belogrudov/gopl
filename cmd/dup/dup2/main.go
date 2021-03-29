@@ -8,8 +8,13 @@ import (
 	"path/filepath"
 )
 
+type wstat struct {
+	count int
+	files map[string]struct{}
+}
+
 func main() {
-	counts := make(map[string]int)
+	stats := make(map[string]*wstat)
 	if len(os.Args) > 1 {
 		for _, filename := range os.Args[1:] {
 			f, err := os.Open(filepath.Clean(filename))
@@ -22,22 +27,33 @@ func main() {
 					log.Fatalln(err)
 				}
 			}()
-			countLines(f, counts)
+			countLines(f, stats, filename)
 		}
 	} else {
-		countLines(os.Stdin, counts)
+		countLines(os.Stdin, stats, "stdin")
 	}
-	for line, count := range counts {
-		if count > 1 {
-			fmt.Println(count, line)
+	for line, st := range stats {
+		if st.count > 1 {
+			fmt.Printf("%dx %q found in:\n", st.count, line)
+			for filename := range st.files {
+				fmt.Println("\t", filename)
+			}
 		}
 	}
 }
 
-func countLines(f *os.File, counts map[string]int) {
+func countLines(f *os.File, stats map[string]*wstat, filename string) {
 	input := bufio.NewScanner(f)
 	for input.Scan() {
-		counts[input.Text()]++
+		line := input.Text()
+		if stats[line] == nil {
+			stats[line] = &wstat{
+				files: make(map[string]struct{}),
+				count: 0,
+			}
+		}
+		stats[line].count++
+		stats[line].files[filename] = struct{}{}
 	}
 	if err := input.Err(); err != nil {
 		log.Fatalln(err)
