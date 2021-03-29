@@ -38,7 +38,7 @@ var palette = []color.Color{color.Black,
 	},
 }
 
-func lissajous(out io.Writer) {
+func Lissajous(out io.Writer) {
 	const (
 		cycles  = 5
 		res     = 0.001
