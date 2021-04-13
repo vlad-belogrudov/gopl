@@ -21,12 +21,28 @@ func (b ColorByte) Scale(x float64) ColorByte {
 	return ColorByte(y)
 }
 
-func MixColorByte(b1, b2 ColorByte) ColorByte {
-	b := b1
-	if b2 > b1 {
-		b = b2
+func MixColorBytes(bytes ...ColorByte) ColorByte {
+	var b ColorByte
+	for _, x := range bytes {
+		if x > b {
+			b = x
+		}
 	}
 	return b
+}
+
+func MixColors(colors ...Color) Color {
+	var reds, greens, blues []ColorByte
+	for _, x := range colors {
+		reds = append(reds, x.Red)
+		greens = append(greens, x.Green)
+		blues = append(blues, x.Blue)
+	}
+	return Color{
+		Red:   MixColorBytes(reds...),
+		Green: MixColorBytes(greens...),
+		Blue:  MixColorBytes(blues...),
+	}
 }
 
 func (c Color) Scale(x float64) Color {
@@ -34,14 +50,6 @@ func (c Color) Scale(x float64) Color {
 		Red:   c.Red.Scale(x),
 		Green: c.Green.Scale(x),
 		Blue:  c.Blue.Scale(x),
-	}
-}
-
-func MixColors(c1, c2 Color) Color {
-	return Color{
-		Red:   MixColorByte(c1.Red, c2.Red),
-		Green: MixColorByte(c1.Green, c2.Green),
-		Blue:  MixColorByte(c1.Blue, c2.Blue),
 	}
 }
 
