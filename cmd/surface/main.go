@@ -58,7 +58,7 @@ func main() {
 			if !ok {
 				continue
 			}
-			c := color.MixColors(color.MixColors(color.MixColors(ac, bc), cc), dc)
+			c := color.MixColors(ac, bc, cc, dc)
 			fmt.Printf("<polygon fill='#%02X%02X%02X' points='%g,%g %g,%g %g,%g %g,%g'/>\n",
 				c.Red, c.Green, c.Blue,
 				ax, ay, bx, by, cx, cy, dx, dy)
