@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -53,7 +54,9 @@ func main() {
 
 	close(jobs)
 	wg.Wait()
-	png.Encode(os.Stdout, img)
+	if err := png.Encode(os.Stdout, img); err != nil {
+		fmt.Fprintf(os.Stderr, "Error while encoding image: %v\n", err)
+	}
 }
 
 func worker(wg *sync.WaitGroup, jobs chan job, img *image.RGBA) {
