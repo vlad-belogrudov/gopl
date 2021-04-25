@@ -1,4 +1,4 @@
-// Separate each 3 digits
+// Separate each 3 digits, e.g. go run main.go 123456.1234567 -> 123'456.123'456'7
 package main
 
 import (
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -14,18 +15,25 @@ func main() {
 		os.Exit(1)
 	}
 	number := os.Args[1]
-	if _, err := strconv.Atoi(number); err != nil {
-		fmt.Fprintf(os.Stderr, "not an integer: %v\n", err)
+	if _, err := strconv.ParseFloat(number, 64); err != nil {
+		fmt.Fprintf(os.Stderr, "not a number: %v\n", err)
 		os.Exit(1)
 	}
 	var buffer bytes.Buffer
-	shift := len(number) % 3
+	point := strings.IndexByte(number, '.')
+	if -1 == point {
+		point = len(number)
+	}
+	shift := point % 3
 	start := 0
 	if number[0] == '-' || number[0] == '+' {
 		start = 1
 	}
 	for i := 0; i < len(number); i++ {
-		if i > start && i%3 == shift {
+		if i == point {
+			shift = (shift + 1) % 3
+			start = i + 1
+		} else if i > start && i%3 == shift {
 			buffer.WriteByte('\'')
 		}
 		buffer.WriteByte(number[i])
