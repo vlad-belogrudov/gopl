@@ -4,18 +4,10 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/vlad-belogrudov/gopl/pkg/uniq"
 )
 
 func main() {
-	words := os.Args[1:]
-	i := 0
-	var previous string
-	for _, word := range words {
-		if word != previous {
-			words[i] = word
-			previous = word
-			i++
-		}
-	}
-	fmt.Println(words[:i])
+	fmt.Println(uniq.Uniq(os.Args[1:]))
 }
