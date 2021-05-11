@@ -18,37 +18,39 @@ func main() {
 		os.Exit(1)
 	}
 	line := []rune(os.Args[1])
-	shift %= len(line)
-	if shift < 0 {
-		shift = len(line) - shift
-	}
 	Rotate(line, shift)
 	fmt.Println(string(line))
 }
 
-func MinInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
+// Rotate accepts slice of runes and shifts elements
 func Rotate(line []rune, shift int) {
 	length := len(line)
+	shift %= length
+	if shift < 0 {
+		shift = length + shift
+	}
 
-	change := MinInt(shift, length-shift)
-	fmt.Println(string(line), shift, change)
-	if length == 0 || change == 0 {
-		return
-	}
-	for i, j := 0, length-change; i < change; i, j = i+1, j+1 {
-		line[i], line[j] = line[j], line[i]
-	}
-	if change < shift {
-		fmt.Println("right part")
-		Rotate(line[change:], length-2*change)
-	} else {
-		fmt.Println("left part")
-		Rotate(line[:length-change], change)
+	for start, finish := 0, length; length > 1; length = finish - start {
+		// exchange minimum number of chars, e.g. len = 5, rotate = 3 =>
+		// change 2 from left and right
+		change := length - shift
+		if change > shift {
+			change = shift
+		}
+		if change == 0 {
+			return
+		}
+		// exchange runes [start:start+change] and [finish - change; finish]
+		for i, j := start, finish-change; i < start+change; i, j = i+1, j+1 {
+			line[i], line[j] = line[j], line[i]
+		}
+		// calculate left or right part to rotate further
+		if change < shift {
+			start += change
+			shift = length - 2*change
+		} else {
+			finish -= change
+			shift = change
+		}
 	}
 }
