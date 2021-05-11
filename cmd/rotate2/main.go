@@ -18,22 +18,37 @@ func main() {
 		os.Exit(1)
 	}
 	line := []rune(os.Args[1])
-	length := len(line)
-	shift %= length
-	next := 0
-	temp := line[next]
-	for range line {
-		next = rotated(next, shift, length)
-		fmt.Printf("next %d stores %c, line %s\n", next, temp, string(line))
-		temp, line[next] = line[next], temp
+	shift %= len(line)
+	if shift < 0 {
+		shift = len(line) - shift
 	}
+	Rotate(line, shift)
 	fmt.Println(string(line))
 }
 
-func rotated(pos, shift, length int) int {
-	pos -= shift
-	if pos < 0 {
-		pos = length + pos
+func MinInt(a, b int) int {
+	if a < b {
+		return a
 	}
-	return pos % length
+	return b
+}
+
+func Rotate(line []rune, shift int) {
+	length := len(line)
+
+	change := MinInt(shift, length-shift)
+	fmt.Println(string(line), shift, change)
+	if length == 0 || change == 0 {
+		return
+	}
+	for i, j := 0, length-change; i < change; i, j = i+1, j+1 {
+		line[i], line[j] = line[j], line[i]
+	}
+	if change < shift {
+		fmt.Println("right part")
+		Rotate(line[change:], length-2*change)
+	} else {
+		fmt.Println("left part")
+		Rotate(line[:length-change], change)
+	}
 }
