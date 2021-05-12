@@ -6,18 +6,24 @@ import (
 	"unicode/utf8"
 )
 
+// RevertString reverts UTF8 string by
+// converting it to runes and returns
+// a new string
 func RevertString(line string) string {
 	runes := []rune(line)
 	RevertRunes(runes)
 	return string(runes)
 }
 
+// RevertRunes revert line of runes in place
 func RevertRunes(line []rune) {
 	for i, j := 0, len(line)-1; i < j; i, j = i+1, j-1 {
 		line[i], line[j] = line[j], line[i]
 	}
 }
 
+// move shifts bytes left or right discarding start or end,
+// negative number means move left, positive - right
 func move(line []byte, num int) {
 	if num == 0 {
 		return
@@ -32,6 +38,7 @@ func move(line []byte, num int) {
 	}
 }
 
+// RevertUTFBytes reverts UTF-8 encoded line in place
 func RevertUTF8Bytes(line []byte) error {
 	first, last := 0, len(line)
 	for last-first > 1 {
