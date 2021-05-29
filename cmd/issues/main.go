@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/fatih/color"
@@ -37,8 +38,8 @@ func search(terms []string) error {
 				color.Red("#### more than year ago ####")
 			}
 		}
-		fmt.Printf("#%-5d %s %20.20s %.55q\n",
-			item.Number, item.CreatedAt.Format("2006-01-02"), item.User.Login, item.Title)
+		fmt.Printf("#%-5d %s %s %20.20s %.55q\n",
+			item.Number, item.CreatedAt.Format("2006-01-02"), item.State, item.User.Login, item.Title)
 	}
 	return nil
 }
@@ -66,8 +67,54 @@ func create(repo, title, text string) error {
 	return nil
 }
 
+func show(repo string, number int) error {
+	issue, err := github.GetIssue(repo, number)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Number:     %d\n", issue.Number)
+	fmt.Printf("Title:      %s\n", issue.Title)
+	fmt.Printf("Created at: %s\n", issue.CreatedAt)
+	fmt.Printf("Created by: %s\n", issue.User.Login)
+	fmt.Printf("State:      %s\n", issue.State)
+	fmt.Printf("URL:        %s\n", issue.HTMLURL)
+	fmt.Printf("Text:       %s\n", issue.Body)
+	for _, comment := range issue.Comments {
+		fmt.Println("### Comment:")
+		fmt.Printf("\tCreated at: %s\n", comment.CreatedAt)
+		fmt.Printf("\tCreated by: %s\n", comment.User.Login)
+		fmt.Printf("\tText:       %s\n", comment.Body)
+	}
+
+	return nil
+}
+
+func close(repo string, number int) error {
+	token, err := getToken()
+	if err != nil {
+		return err
+	}
+	if err := github.CloseIssue(token, repo, number); err != nil {
+		return err
+	}
+	fmt.Printf("Closed issue %d at %s\n", number, repo)
+	return nil
+}
+
+func update(repo string, number int, title string) error {
+	token, err := getToken()
+	if err != nil {
+		return err
+	}
+	if err := github.UpdateIssue(token, repo, number, title); err != nil {
+		return err
+	}
+	fmt.Printf("Updated issue %d at %s\n", number, repo)
+	return nil
+}
+
 func help() {
-	log.Fatalln("Usage: issues <create|update|close|search|show> [optinal terms]")
+	log.Fatalln("Usage: issues <create|update|comment|close|search|show> [optinal terms]")
 }
 
 func main() {
@@ -83,6 +130,36 @@ func main() {
 			log.Fatalln("need additional arguments - full repo name, title, text")
 		}
 		err = create(os.Args[2], os.Args[3], os.Args[4])
+	case "close":
+		if len(os.Args) != 4 {
+			log.Fatalln("need additional arguments - full repo name and issue number")
+		}
+		var number int
+		number, err = strconv.Atoi(os.Args[3])
+		if err != nil {
+			break
+		}
+		err = close(os.Args[2], number)
+	case "show":
+		if len(os.Args) != 4 {
+			log.Fatalln("need additional arguments - full repo name and issue number")
+		}
+		var number int
+		number, err = strconv.Atoi(os.Args[3])
+		if err != nil {
+			break
+		}
+		err = show(os.Args[2], number)
+	case "update":
+		if len(os.Args) != 5 {
+			log.Fatalln("need additional arguments - full repo name, issue number and new title")
+		}
+		var number int
+		number, err = strconv.Atoi(os.Args[3])
+		if err != nil {
+			break
+		}
+		err = update(os.Args[2], number, os.Args[4])
 	default:
 		help()
 	}
