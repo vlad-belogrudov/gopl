@@ -43,6 +43,10 @@ type NewIssue struct {
 	Text  string `json:"body"`
 }
 
+type NewComment struct {
+	Text string `json:"body"`
+}
+
 type UpdateIssueTitle struct {
 	Title string `json:"title"`
 }
@@ -122,6 +126,31 @@ func CloseIssue(token, repo string, number int) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed request: %s", resp.Status)
+	}
+	return nil
+}
+
+// CreateComment adds new comment to a specified issue
+func CreateComment(token, repo string, number int, text string) error {
+	comment := NewComment{Text: text}
+	data, err := json.Marshal(comment)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST",
+		fmt.Sprintf(commentsUrl, repo, number), bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", "token "+token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("failed request: %s", resp.Status)
 	}
 	return nil

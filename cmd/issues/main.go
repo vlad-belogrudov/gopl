@@ -113,6 +113,18 @@ func update(repo string, number int, title string) error {
 	return nil
 }
 
+func comment(repo string, number int, text string) error {
+	token, err := getToken()
+	if err != nil {
+		return err
+	}
+	if err := github.CreateComment(token, repo, number, text); err != nil {
+		return err
+	}
+	fmt.Printf("Commented issue %d at %s\n", number, repo)
+	return nil
+}
+
 func help() {
 	log.Fatalln("Usage: issues <create|update|comment|close|search|show> [optinal terms]")
 }
@@ -160,6 +172,16 @@ func main() {
 			break
 		}
 		err = update(os.Args[2], number, os.Args[4])
+	case "comment":
+		if len(os.Args) != 5 {
+			log.Fatalln("need additional arguments - full repo name, issue number and comment")
+		}
+		var number int
+		number, err = strconv.Atoi(os.Args[3])
+		if err != nil {
+			break
+		}
+		err = comment(os.Args[2], number, os.Args[4])
 	default:
 		help()
 	}
