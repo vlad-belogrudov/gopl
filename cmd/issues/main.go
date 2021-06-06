@@ -3,8 +3,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"sort"
 	"strconv"
 	"time"
@@ -12,6 +14,35 @@ import (
 	"github.com/fatih/color"
 	"github.com/vlad-belogrudov/gopl/pkg/github"
 )
+
+func readText() (string, error) {
+	f, err := ioutil.TempFile("", "issue")
+	if err != nil {
+		return "", err
+	}
+	filename := f.Name()
+	if err = f.Close(); err != nil {
+		return "", err
+	}
+	defer os.Remove(filename)
+	editor := os.Getenv("EDITOR")
+	fmt.Printf("opening %s with %s\n", filename, editor)
+	if len(editor) == 0 {
+		return "", fmt.Errorf("EDITOR is not set")
+	}
+	cmd := exec.Command(editor, filename)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+	fmt.Println("reading")
+	text, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	return string(text), nil
+}
 
 func search(terms []string) error {
 	result, err := github.SearchIssues(terms)
@@ -57,6 +88,11 @@ func create(repo, title, text string) error {
 	token, err := getToken()
 	if err != nil {
 		return err
+	}
+	if len(text) == 0 {
+		if text, err = readText(); err != nil {
+			return err
+		}
 	}
 	issue, err := github.CreateIssue(token, repo, title, text)
 	if err != nil {
@@ -118,6 +154,11 @@ func comment(repo string, number int, text string) error {
 	if err != nil {
 		return err
 	}
+	if len(text) == 0 {
+		if text, err = readText(); err != nil {
+			return err
+		}
+	}
 	if err := github.CreateComment(token, repo, number, text); err != nil {
 		return err
 	}
@@ -139,12 +180,13 @@ func main() {
 		err = search(os.Args[2:])
 	case "create":
 		if len(os.Args) != 5 {
-			log.Fatalln("need additional arguments - full repo name, title, text")
+			log.Fatalln("need additional arguments - full repo name, title, text.\n",
+				"Text can be empty string to open external editor.")
 		}
 		err = create(os.Args[2], os.Args[3], os.Args[4])
 	case "close":
 		if len(os.Args) != 4 {
-			log.Fatalln("need additional arguments - full repo name and issue number")
+			log.Fatalln("need additional arguments - full repo name and issue number.")
 		}
 		var number int
 		number, err = strconv.Atoi(os.Args[3])
@@ -154,7 +196,7 @@ func main() {
 		err = close(os.Args[2], number)
 	case "show":
 		if len(os.Args) != 4 {
-			log.Fatalln("need additional arguments - full repo name and issue number")
+			log.Fatalln("need additional arguments - full repo name and issue number.")
 		}
 		var number int
 		number, err = strconv.Atoi(os.Args[3])
@@ -164,7 +206,7 @@ func main() {
 		err = show(os.Args[2], number)
 	case "update":
 		if len(os.Args) != 5 {
-			log.Fatalln("need additional arguments - full repo name, issue number and new title")
+			log.Fatalln("need additional arguments - full repo name, issue number and new title.")
 		}
 		var number int
 		number, err = strconv.Atoi(os.Args[3])
@@ -174,7 +216,8 @@ func main() {
 		err = update(os.Args[2], number, os.Args[4])
 	case "comment":
 		if len(os.Args) != 5 {
-			log.Fatalln("need additional arguments - full repo name, issue number and comment")
+			log.Fatalln("need additional arguments - full repo name, issue number and comment.\n",
+				"Comment can be empty string to open external editor.")
 		}
 		var number int
 		number, err = strconv.Atoi(os.Args[3])
