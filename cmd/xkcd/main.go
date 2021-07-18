@@ -10,7 +10,7 @@ import (
 
 func main() {
 	entries := xkcd.Search(os.Args[1:])
-	for entry := range entries {
+	for _, entry := range entries {
 		fmt.Println(entry)
 	}
 }

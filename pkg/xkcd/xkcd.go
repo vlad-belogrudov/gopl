@@ -9,8 +9,12 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strings"
 	"sync"
 	"time"
+	"unicode"
+
+	stemming "github.com/kljensen/snowball/english"
 )
 
 const XKCDURL = "https://xkcd.com/%d/info.0.json"
@@ -81,6 +85,36 @@ func download(wg *sync.WaitGroup, lastDigit int, store *EntryStorage) {
 	}
 }
 
+var dropWords = map[string]bool{
+	"a": true, "and": true, "be": true, "from": true, "have": true, "i": true,
+	"in": true, "of": true, "that": true, "the": true, "to": true, "was": true,
+	"were": true,
+}
+
+func cleanWords(line string) []string {
+	// remove special chars
+	line = strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsNumber(r) {
+			return r
+		}
+		return ' '
+	}, line)
+	// remove frequent words and variations
+	wordSet := make(map[string]bool)
+	for _, w := range strings.Fields(line) {
+		if !dropWords[w] {
+			// normalize
+			w = stemming.Stem(w, false)
+			wordSet[strings.ToLower(w)] = true
+		}
+	}
+	var words []string
+	for w := range wordSet {
+		words = append(words, w)
+	}
+	return words
+}
+
 func init() {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -107,6 +141,10 @@ func init() {
 		db.Index = make(map[string][]int)
 		for _, e := range store.entries {
 			db.Documents = append(db.Documents, e.URL)
+			words := cleanWords(e.Text + e.Title)
+			for _, w := range words {
+				db.Index[w] = append(db.Index[w], e.number)
+			}
 		}
 
 		data, err := json.Marshal(db)
@@ -135,6 +173,22 @@ func init() {
 }
 
 func Search(tokens []string) []string {
-
-	return []string{}
+	if len(tokens) == 0 {
+		return []string{}
+	}
+	matcher := make(map[int]int) // see how many tokens each document has
+	for _, token := range tokens {
+		token = stemming.Stem(token, false)
+		for _, index := range db.Index[token] {
+			matcher[index]++
+		}
+	}
+	var results []string
+	for index, found := range matcher {
+		// if document has all tokens - take it
+		if found == len(tokens) {
+			results = append(results, db.Documents[index])
+		}
+	}
+	return results
 }
