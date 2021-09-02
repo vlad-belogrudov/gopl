@@ -1,2 +1,2 @@
 # gopl
-GOPL excersizes
+GOPL book excersizes
